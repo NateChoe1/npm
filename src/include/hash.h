@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-typedef unsigned char byte;
+#include <util.h>
 
 void sha256(byte ret[32], const byte *data, size_t len);
 

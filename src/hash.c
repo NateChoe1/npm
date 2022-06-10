@@ -1,13 +1,13 @@
 #include <string.h>
 
-#include <hash.h>
 #include <util.h>
+#include <hash.h>
 
 static int getblock256(byte *ret, const byte *data, size_t start, size_t len);
-static void sha256block(unsigned long hvals[8], const byte block[64]);
+static void sha256block(u32 hvals[8], const byte block[64]);
 
 void sha256(byte ret[32], const byte *data, size_t len) {
-	unsigned long hvals[8];
+	u32 hvals[8];
 	hvals[0] = 0x6a09e667;
 	hvals[1] = 0xbb67ae85;
 	hvals[2] = 0x3c6ef372;
@@ -67,8 +67,8 @@ static int getblock256(byte *ret, const byte *data, size_t start, size_t len) {
 	return 0;
 }
 
-static void sha256block(unsigned long hvals[8], const byte block[64]) {
-	const unsigned long k[] = {
+static void sha256block(u32 hvals[8], const byte block[64]) {
+	const u32 k[] = {
 		0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
 		0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
 		0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
@@ -86,8 +86,8 @@ static void sha256block(unsigned long hvals[8], const byte block[64]) {
 		0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
 		0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
 	};
-	unsigned long w[64];
-	unsigned long work[8];
+	u32 w[64];
+	u32 work[8];
 	int i;
 	for (i = 0; i < 16; ++i) {
 		int j;
@@ -99,14 +99,14 @@ static void sha256block(unsigned long hvals[8], const byte block[64]) {
 		/* I hate endianness */
 	}
 	for (i = 16; i < 64; ++i) {
-		unsigned long s0, s1;
+		u32 s0, s1;
 		s0 = RTR(w[i - 15], 7) ^ RTR(w[i - 15], 18) ^ (w[i - 15] >> 3);
 		s1 = RTR(w[i - 2], 17) ^ RTR(w[i - 2], 19) ^ (w[i - 2] >> 10);
 		w[i] = (w[i - 16] + s0 + w[i - 7] + s1) & 0xffffffff;
 	}
-	memcpy(work, hvals, sizeof work);
+	memcpy(work, hvals, LEN(work));
 	for (i = 0; i < 64; ++i) {
-		unsigned long s1, ch, tmp1, s0, maj, tmp2;
+		u32 s1, ch, tmp1, s0, maj, tmp2;
 		s1 = RTR(work[4], 6) ^ RTR(work[4], 11) ^ RTR(work[4], 25);
 		ch = (work[4] & work[5]) ^ ((~work[4]) & work[6]);
 		tmp1 = (work[7] + s1 + ch + k[i] + w[i]);

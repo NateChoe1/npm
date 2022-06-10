@@ -1,6 +1,7 @@
 SRC = $(wildcard src/*.c)
 OBJ = $(subst .c,.o,$(subst src,work,$(SRC)))
-CFLAGS := -O2 -pipe -Wall -Wpedantic -Wshadow -ansi
+#CFLAGS := -O2 -pipe -Wall -Wpedantic -Wshadow -ansi
+CFLAGS := -O2 -pipe -Wall -Wpedantic -Wshadow
 CFLAGS += -Isrc/include/
 INSTALLDIR := /usr/bin/
 OUT = npm
