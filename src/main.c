@@ -45,9 +45,19 @@ int main() {
 
 	memset(text, 0, sizeof text);
 
+	for (i = 0; i < 32; ++i)
+		printf("%02x", key[i]);
+	putchar('\n');
 	aes256encrypt(crypt, text, key);
 	for (i = 0; i < 16; ++i)
 		printf("%02x", crypt[i]);
+	putchar('\n');
+	for (i = 0; i < 32; ++i)
+		printf("%02x", key[i]);
+	putchar('\n');
+	aes256decrypt(text, crypt, key);
+	for (i = 0; i < 16; ++i)
+		printf("%02x", text[i]);
 	putchar('\n');
 
 	return 0;
