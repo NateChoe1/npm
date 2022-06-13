@@ -104,7 +104,7 @@ static void sha256block(u32 hvals[8], const byte block[64]) {
 		s1 = RTR(w[i - 2], 17) ^ RTR(w[i - 2], 19) ^ (w[i - 2] >> 10);
 		w[i] = (w[i - 16] + s0 + w[i - 7] + s1) & 0xffffffff;
 	}
-	memcpy(work, hvals, LEN(work));
+	memcpy(work, hvals, sizeof work);
 	for (i = 0; i < 64; ++i) {
 		u32 s1, ch, tmp1, s0, maj, tmp2;
 		s1 = RTR(work[4], 6) ^ RTR(work[4], 11) ^ RTR(work[4], 25);
