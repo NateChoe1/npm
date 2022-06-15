@@ -60,16 +60,13 @@ gotargs:
 		FILE *in;
 		in = fopen(passpath, "r");
 		if (in != NULL) {
-			byte *data;
-			size_t datalen;
-			data = aes256read(in, &datalen, key);
-			fclose(in);
-			if (memcmp(data, "NPM\0", 4) != 0) {
+			keyring = readpasswords(in, key);
+			if (keyring == NULL) {
 				fputs("Incorrect master password\n", stderr);
+				fclose(in);
 				return 1;
 			}
-			keyring = readpasswords(data, datalen);
-			free(data);
+			fclose(in);
 		}
 		else
 			keyring = newfile();
@@ -96,7 +93,77 @@ gotargs:
 }
 
 int updatepass(int argc, char **argv) {
+	char *passpath;
+	FILE *file;
+	FILE *salt;
+	struct file *keyring;
+	passpath = NULL;
+	salt = fopen("/dev/urandom", "r");
+	if (salt == NULL) {
+		fputs("Failed to open file /dev/urandom for reading\n", stderr);
+		return 1;
+	}
+	for (;;) {
+		int opt;
+		opt = getopt(argc, argv, "f:");
+		switch (opt) {
+		case -1:
+			goto gotargs;
+		case 'f':
+			passpath = strdup(optarg);
+			break;
+		}
+	}
+gotargs:
+	if (argc - optind < 2) {
+		fputs("Expected 2 arguments for the old and new passwords",
+				stderr);
+		goto error1;
+	}
+	if (passpath == NULL)
+		passpath = getdefpasspath();
+
+	file = fopen(passpath, "r");
+	if (file == NULL) {
+		fprintf(stderr, "Failed to open file %s for reading\n",
+				passpath);
+		goto error1;
+	}
+
+	{
+		byte oldkey[32];
+		sha256(oldkey, (byte *) argv[optind], strlen(argv[optind]));
+		keyring = readpasswords(file, oldkey);
+		if (keyring == NULL) {
+			fputs("Incorrect old master password\n", stderr);
+			goto error2;
+		}
+		fclose(file);
+	}
+
+	file = fopen(passpath, "w");
+	if (file == NULL) {
+		fprintf(stderr, "Failed to open file %s for reading\n",
+				passpath);
+		freefile(keyring);
+		goto error1;
+	}
+
+	{
+		byte newkey[32];
+		sha256(newkey, (byte *) argv[optind+1], strlen(argv[optind+1]));
+		writefile(keyring, file, newkey, salt);
+	}
+
+	fclose(file);
+	free(passpath);
+	freefile(keyring);
 	return 0;
+error2:
+	fclose(file);
+error1:
+	free(passpath);
+	return 1;
 }
 
 int getpass(int argc, char **argv) {
@@ -130,8 +197,6 @@ gotargs:
 	sha256(key, (byte *) master, strlen(master));
 	{
 		FILE *in;
-		byte *data;
-		size_t datalen;
 
 		in = fopen(passpath, "r");
 		if (in == NULL) {
@@ -140,14 +205,12 @@ gotargs:
 			return 1;
 		}
 
-		data = aes256read(in, &datalen, key);
-		fclose(in);
-		if (memcmp(data, "NPM\0", 4) != 0) {
+		keyring = readpasswords(in, key);
+		if (keyring == NULL) {
 			fputs("Incorrect master password\n", stderr);
 			return 1;
 		}
-		keyring = readpasswords(data, datalen);
-		free(data);
+		fclose(in);
 	}
 
 	for (i = 0; i < keyring->len; ++i) {

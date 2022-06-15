@@ -24,7 +24,21 @@ struct file *newfile() {
 	return ret;
 }
 
-struct file *readpasswords(byte *data, size_t datalen) {
+struct file *readpasswords(FILE *file, byte key[32]) {
+	byte *data;
+	size_t datalen;
+	struct file *ret;
+	data = aes256read(file, &datalen, key);
+	if (memcmp(data, "NPM\0", 4) != 0) {
+		free(data);
+		return NULL;
+	}
+	ret = getpasswords(data, datalen);
+	free(data);
+	return ret;
+}
+
+struct file *getpasswords(byte *data, size_t datalen) {
 	size_t len;
 	u32 count;
 	int i;

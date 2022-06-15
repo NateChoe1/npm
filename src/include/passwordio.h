@@ -13,7 +13,9 @@ struct file {
 };
 
 struct file *newfile();
-struct file *readpasswords(byte *data, size_t datalen);
+struct file *readpasswords(FILE *file, byte key[32]);
+/* returns NULL for an invalid password only */
+struct file *getpasswords(byte *data, size_t datalen);
 void freefile(struct file *file);
 void addpassword(struct file *file, struct password *password);
 int writefile(struct file *file, FILE *out, byte key[32], FILE *salt);
