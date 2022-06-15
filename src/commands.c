@@ -231,7 +231,81 @@ gotargs:
 }
 
 int delpass(int argc, char **argv) {
-	return 0;
+	char *master, *passpath;
+	struct password *passmask;
+	byte key[32];
+	struct file *keyring;
+	int i;
+
+	passmask = newpassword();
+	passpath = master = NULL;
+
+	for (;;) {
+		int opt;
+		opt = getopt(argc, argv, "m:p:f:");
+		switch (opt) {
+		case -1:
+			goto gotargs;
+		case 'm':
+			master = strdup(optarg);
+			break;
+		case 'p':
+			addpublicparse(passmask, optarg);
+			break;
+		case 'f':
+			passpath = strdup(optarg);
+			break;
+		}
+	}
+gotargs:
+	if (passpath == NULL)
+		passpath = getdefpasspath();
+	if (master == NULL)
+		master = askpassword("Master password: ");
+
+	sha256(key, (byte *) master, strlen(master));
+	{
+		FILE *in;
+		in = fopen(passpath, "r");
+		if (in != NULL) {
+			keyring = readpasswords(in, key);
+			if (keyring == NULL) {
+				fputs("Incorrect master password\n", stderr);
+				fclose(in);
+				return 1;
+			}
+			fclose(in);
+		}
+		else
+			keyring = newfile();
+	}
+
+	for (i = keyring->len - 1; i >= 0; --i) {
+		if (issubset(passmask, keyring->passwords[i])) {
+			memmove(keyring->passwords + i + 1,
+				keyring->passwords + i,
+				(keyring->len - i - 1) *
+					sizeof *keyring->passwords);
+			--keyring->len;
+		}
+	}
+
+	{
+		FILE *out, *salt;
+		salt = fopen("/dev/urandom", "r");
+		if (salt == NULL) {
+			fputs("Failed to open file /dev/urandom for reading\n",
+					stderr);
+			return 1;
+		}
+		out = fopen(passpath, "w");
+		if (out == NULL) {
+			fprintf(stderr, "Failed to open file %s for writing\n",
+					passpath);
+			return 1;
+		}
+		return writefile(keyring, out, key, salt);
+	}
 }
 
 static char *getdefpasspath() {

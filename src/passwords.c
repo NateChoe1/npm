@@ -55,6 +55,22 @@ void addprivateparse(struct password *pass, char *property) {
 	addparse(pass, property, addprivate);
 }
 
+int issubset(const struct password *small, const struct password *big) {
+	int i, j;
+	for (i = 0; i < small->publiclen; ++i) {
+		const struct property *smallprop = small->public + i;
+		for (j = 0; j < big->publiclen; ++j) {
+			const struct property *bigprop = big->public + j;
+			if (strcmp(smallprop->name, bigprop->name) == 0 &&
+				strcmp(smallprop->value, bigprop->value) == 0)
+				goto foundmatch;
+		}
+		return 0;
+foundmatch:;
+	}
+	return 1;
+}
+
 static void addproperty(size_t *len, size_t *alloc,
 		struct property **properties, char *name, char *value) {
 	if (*len >= *alloc) {

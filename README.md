@@ -33,7 +33,6 @@ npm get
 npm del
     -m [password]        Set the master password
     -p [name:value]      Only delete passwords with this public property
-    -s [name:value]      Only delete passwords with this private property
     -f [file]            Set the file for NPM to delete passwords from
 ```
 
